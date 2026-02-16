@@ -6,7 +6,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { User } from './user.model';
-import { CreateUserDTO } from './user.DTO';
+import { CreateUserDTO, UpateUserDTO } from './user.DTO';
 
 @Injectable()
 export class UsersService {
@@ -58,7 +58,7 @@ export class UsersService {
     return { message: `El usuario con id ${id} ha sido eliminado` };
   }
 
-  updateUser(id: string, body: CreateUserDTO) {
+  updateUser(id: string, body: UpateUserDTO) {
     const position = this.positionById(id);
     const emailNew = body.email;
     if (emailNew && !emailNew.includes('@')) {
