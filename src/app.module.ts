@@ -1,19 +1,30 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { UsersController } from './users/users.controller';
-import { UsersService } from './users/users.service';
+import { UsersModule } from './users/users.module';
+import { EnvConfig } from './env.model';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    TypeOrmModule.forRootAsync({
+      useFactory: (configService: ConfigService<EnvConfig>) => ({
+        type: 'postgres',
+        host: configService.get('POSTGRES_HOST', { infer: true }),
+        port: configService.get('POSTGRES_PORT', { infer: true }),
+        username: configService.get('POSTGRES_USER', { infer: true }),
+        password: configService.get('POSTGRES_PASSWORD', { infer: true }),
+        database: configService.get('POSTGRES_DB', { infer: true }),
+        autoLoadEntities: true,
+        synchronize: true,
+      }),
+      inject: [ConfigService],
+    }),
+    UsersModule,
   ],
-  controllers: [AppController, UsersController],
-  providers: [AppService, UsersService],
 })
 export class AppModule {
   static configService: any;

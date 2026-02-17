@@ -1,36 +1,29 @@
 import {
-  Body,
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
-  UnprocessableEntityException,
 } from '@nestjs/common';
-import { User } from './user.model';
+
 import { CreateUserDTO, UpateUserDTO } from './user.DTO';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from './entities/user.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'luisferdeveloper@gmail.com',
-    },
-    {
-      id: '2',
-      name: 'Luis Cadena',
-      email: 'wallpapersss@gmail.com',
-    },
-  ];
+  constructor(
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+  ) {}
 
-  getAllUsers(): User[] {
-    return this.users;
+  async getAllUsers() {
+    return await this.usersRepository.find();
   }
 
-  getUserById(id: string) {
-    const userPosition = this.positionById(id);
-    const user = this.users[userPosition];
-    if (user.id === '1') {
+  async getUserById(id: number) {
+    const user = await this.userById(id);
+    if (user.id === 1) {
       throw new ForbiddenException(
         `El usuario con id ${id} No tiene permisos para acceder a esta información`,
       );
@@ -38,48 +31,43 @@ export class UsersService {
     return user;
   }
 
-  createUser(@Body() body: CreateUserDTO) {
-    //const idNew = (this.users.length + 1).toString();
-    const idNew = new Date().getTime().toString();
-    const emailNew = body.email;
-    if (emailNew && !emailNew.includes('@')) {
-      throw new UnprocessableEntityException(
-        `El correo ${emailNew} no es válido`,
-      );
+  async createUser(body: CreateUserDTO) {
+    try {
+      const newUser = await this.usersRepository.save(body);
+      return newUser;
+    } catch {
+      throw new BadRequestException('Error creando el usuario.');
     }
-    body.id = idNew;
-    this.users.push(body);
-    return body;
   }
 
-  deleteUser(id: string) {
-    const position = this.positionById(id);
-    this.users.splice(position, 1);
+  async deleteUser(id: number) {
+    const user = await this.userById(id);
+    await this.usersRepository.delete(user.id);
     return { message: `El usuario con id ${id} ha sido eliminado` };
   }
 
-  updateUser(id: string, body: UpateUserDTO) {
-    const position = this.positionById(id);
-    const emailNew = body.email;
-    if (emailNew && !emailNew.includes('@')) {
-      throw new UnprocessableEntityException(
-        `El correo ${emailNew} no es válido`,
-      );
-    }
-    const currentData = this.users[position];
-    const updatedUser = {
-      ...currentData,
-      ...body,
-    };
-    this.users[position] = updatedUser;
+  async updateUser(id: number, body: UpateUserDTO) {
+    const user = await this.userById(id);
+    const updatedUser = this.usersRepository.merge(user, body);
     return updatedUser;
   }
 
-  private positionById(id: string) {
-    const position = this.users.findIndex((user) => user.id === id);
-    if (position === -1) {
+  private async userById(id: number) {
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) {
       throw new NotFoundException(`El usuario con id ${id} No existe.`);
     }
-    return position;
+    return user;
+  }
+
+  async getUserProfile(id: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['profile'],
+    });
+    if (!user) {
+      throw new NotFoundException(`El usuario con id ${id} No existe.`);
+    }
+    return user.profile;
   }
 }
