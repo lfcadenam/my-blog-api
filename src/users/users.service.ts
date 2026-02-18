@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { CreateUserDTO, UpateUserDTO } from './user.DTO';
+import { CreateUserDTO, UpdateUserDTO } from './dtos/user.DTO';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
@@ -18,7 +18,31 @@ export class UsersService {
   ) {}
 
   async getAllUsers() {
-    return await this.usersRepository.find();
+    return await this.usersRepository.find({
+      relations: ['profile'],
+    });
+  }
+
+  async getProfileByUserId(id: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['profile'],
+    });
+    if (!user) {
+      throw new NotFoundException(`El usuario con id ${id} No existe.`);
+    }
+    return user.profile;
+  }
+
+  async getPostsByUserId(id: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['posts'],
+    });
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    return user.posts;
   }
 
   async getUserById(id: number) {
@@ -46,14 +70,22 @@ export class UsersService {
     return { message: `El usuario con id ${id} ha sido eliminado` };
   }
 
-  async updateUser(id: number, body: UpateUserDTO) {
-    const user = await this.userById(id);
-    const updatedUser = this.usersRepository.merge(user, body);
-    return updatedUser;
+  async updateUser(id: number, body: UpdateUserDTO) {
+    try {
+      const user = await this.userById(id);
+      const updatedUser = this.usersRepository.merge(user, body);
+      await this.usersRepository.save(updatedUser);
+      return updatedUser;
+    } catch {
+      throw new BadRequestException('Error actualizando el usuario.');
+    }
   }
 
   private async userById(id: number) {
-    const user = await this.usersRepository.findOneBy({ id });
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['profile'],
+    });
     if (!user) {
       throw new NotFoundException(`El usuario con id ${id} No existe.`);
     }
