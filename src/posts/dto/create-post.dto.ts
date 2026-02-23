@@ -23,9 +23,9 @@ export class CreatePostDto {
   @IsOptional()
   sumary?: string;
 
-  @IsNumber()
+  /*@IsNumber()
   @IsNotEmpty()
-  userId: number;
+  userId: number;*/
 
   @IsArray()
   @IsNumber({}, { each: true })

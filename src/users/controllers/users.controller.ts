@@ -7,9 +7,11 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateUserDTO, UpdateUserDTO } from '../dtos/user.DTO';
 import { UsersService } from '../services/users.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('users')
 export class UsersController {
@@ -34,6 +36,7 @@ export class UsersController {
     return this.userService.getPostsByUserId(id);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   createUser(@Body() body: CreateUserDTO) {
     return this.userService.createUser(body);

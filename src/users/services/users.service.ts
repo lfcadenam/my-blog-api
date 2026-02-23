@@ -57,8 +57,9 @@ export class UsersService {
 
   async createUser(body: CreateUserDTO) {
     try {
-      const newUser = await this.usersRepository.save(body);
-      return newUser;
+      const newUser = this.usersRepository.create(body);
+      const savedUser = await this.usersRepository.save(newUser);
+      return this.getProfileByUserId(savedUser.id);
     } catch {
       throw new BadRequestException('Error creando el usuario.');
     }
@@ -101,5 +102,12 @@ export class UsersService {
       throw new NotFoundException(`El usuario con id ${id} No existe.`);
     }
     return user.profile;
+  }
+
+  async getUserByEmail(email: string) {
+    const user = await this.usersRepository.findOne({
+      where: { email },
+    });
+    return user;
   }
 }

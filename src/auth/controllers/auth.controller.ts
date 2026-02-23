@@ -1,0 +1,19 @@
+import { Controller, Post, UseGuards, Req } from '@nestjs/common';
+import express from 'express';
+import { AuthGuard } from '@nestjs/passport';
+import { AuthService } from '../services/auth.service';
+import { User } from 'src/users/entities/user.entity';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private authService: AuthService) {}
+  @UseGuards(AuthGuard('local'))
+  @Post('login')
+  login(@Req() req: express.Request) {
+    const user = req.user as User;
+    return {
+      user,
+      acces_token: this.authService.generateToken(user),
+    };
+  }
+}

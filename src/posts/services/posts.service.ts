@@ -35,11 +35,11 @@ export class PostsService {
     return post;
   }
 
-  async create(body: CreatePostDto) {
+  async create(body: CreatePostDto, usertId: number) {
     try {
       const newPost = await this.postsRepository.save({
         ...body,
-        user: { id: body.userId },
+        user: { id: usertId },
         categories: body.categoryIds?.map((id) => ({ id })),
       });
       return this.findOne(newPost.id);
@@ -66,5 +66,13 @@ export class PostsService {
     } catch {
       throw new BadRequestException('Error eliminando el post');
     }
+  }
+
+  async getPostByCategoryID(categoryId: number) {
+    const posts = await this.postsRepository.find({
+      where: { categories: { id: categoryId } },
+      relations: ['user.profile'],
+    });
+    return posts;
   }
 }
